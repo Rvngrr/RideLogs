@@ -2,15 +2,16 @@
   "name": "motolog",
   "version": "1.0.0",
   "description": "Motorcycle History & Rides Dashboard",
-  "main": "server.js",
+  "main": "api/index.js",
   "type": "module",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "node api/index.js",
+    "dev": "node api/index.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "serverless-http": "^2.8.0"
   }
 }

@@ -4,9 +4,11 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import sqlite3 from 'sqlite3';
+import serverless from 'serverless-http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -21,7 +23,7 @@ app.use((req, res, next) => {
 });
 
 // Resolve static routes to serve dashboard files directly on this port
-app.use(express.static(__dirname));
+app.use(express.static(projectRoot));
 
 // ==========================================
 // SQLITE DATABASE INITS
@@ -31,11 +33,11 @@ import fs from 'fs';
 
 // Resolve database path - on Vercel we must copy the database to /tmp so it is writable
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
-const dbDir = isVercel ? '/tmp' : __dirname;
+const dbDir = isVercel ? '/tmp' : projectRoot;
 const dbPath = path.join(dbDir, 'database.db');
 
 if (isVercel) {
-  const sourceDbPath = path.join(__dirname, 'database.db');
+  const sourceDbPath = path.join(projectRoot, 'database.db');
   try {
     if (fs.existsSync(sourceDbPath)) {
       if (!fs.existsSync(dbPath)) {
@@ -400,4 +402,5 @@ if (!process.env.VERCEL) {
   });
 }
 
-export default app;
+const handler = serverless(app);
+export default handler;
