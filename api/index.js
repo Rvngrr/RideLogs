@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import sqlite3 from 'sqlite3';
 import serverless from 'serverless-http';
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +37,16 @@ app.use((req, res, next) => {
 });
 
 // ==========================================
+
+// Supabase optional integration (server-side only)
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_KEY;
+const useSupabase = !!(supabaseUrl && supabaseKey);
+let supabase = null;
+if (useSupabase) {
+  supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+  console.log('Supabase client initialized for server-side use.');
+}
 // SQLITE DATABASE INITS
 // ==========================================
 
@@ -234,6 +245,27 @@ async function initDatabaseTables() {
 // GET FULL STATE
 app.get(`${apiBase}/db`, async (req, res) => {
   try {
+    if (useSupabase) {
+      // Read from Supabase tables
+      const { data: bikeRows, error: bikeErr } = await supabase.from('bike').select('*').limit(1);
+      const { data: maintenanceRows, error: maintErr } = await supabase.from('maintenance').select('*');
+      const { data: schedulesRows, error: schedErr } = await supabase.from('schedules').select('*');
+      const { data: ridesRows, error: ridesErr } = await supabase.from('rides').select('*');
+      const { data: upgradesRows, error: upgErr } = await supabase.from('upgrades').select('*');
+
+      if (bikeErr || maintErr || schedErr || ridesErr || upgErr) {
+        const firstErr = bikeErr || maintErr || schedErr || ridesErr || upgErr;
+        throw firstErr;
+      }
+
+      const bike = (Array.isArray(bikeRows) ? (bikeRows[0] || null) : bikeRows) || null;
+      const maintenance = (maintenanceRows || []).map(m => ({ ...m, diy: !!m.diy }));
+
+      res.json({ bike, maintenance, schedules: schedulesRows || [], rides: ridesRows || [], upgrades: upgradesRows || [] });
+      return;
+    }
+
+    // SQLite fallback
     const bike = await dbGet("SELECT * FROM bike LIMIT 1");
     const maintenanceRaw = await dbAll("SELECT * FROM maintenance");
     const schedules = await dbAll("SELECT * FROM schedules");
@@ -245,7 +277,7 @@ app.get(`${apiBase}/db`, async (req, res) => {
 
     res.json({ bike, maintenance, schedules, rides, upgrades });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch database state: ' + err.message });
+    res.status(500).json({ error: 'Failed to fetch database state: ' + (err.message || err) });
   }
 });
 
@@ -253,11 +285,19 @@ app.get(`${apiBase}/db`, async (req, res) => {
 app.put(`${apiBase}/bike`, async (req, res) => {
   const { name, year, odometer, avatarColor } = req.body;
   try {
+    if (useSupabase) {
+      const payload = { id: 1, name, year, odometer, avatarColor };
+      const { error } = await supabase.from('bike').upsert(payload, { onConflict: 'id' });
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("UPDATE bike SET name = ?, year = ?, odometer = ?, avatarColor = ? WHERE id = 1", 
       [name, year, odometer, avatarColor]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
@@ -265,31 +305,52 @@ app.put(`${apiBase}/bike`, async (req, res) => {
 app.post(`${apiBase}/maintenance`, async (req, res) => {
   const { id, date, odometer, category, cost, diy, description, notes } = req.body;
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('maintenance').insert([{ id, date, odometer, category, cost, diy: diy ? 1 : 0, description, notes }]);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("INSERT INTO maintenance (id, date, odometer, category, cost, diy, description, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [id, date, odometer, category, cost, diy ? 1 : 0, description, notes]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 app.put(`${apiBase}/maintenance/:id`, async (req, res) => {
   const { date, odometer, category, cost, diy, description, notes } = req.body;
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('maintenance').update({ date, odometer, category, cost, diy: diy ? 1 : 0, description, notes }).eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("UPDATE maintenance SET date = ?, odometer = ?, category = ?, cost = ?, diy = ?, description = ?, notes = ? WHERE id = ?",
       [date, odometer, category, cost, diy ? 1 : 0, description, notes, req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 app.delete(`${apiBase}/maintenance/:id`, async (req, res) => {
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('maintenance').delete().eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("DELETE FROM maintenance WHERE id = ?", [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
@@ -297,31 +358,52 @@ app.delete(`${apiBase}/maintenance/:id`, async (req, res) => {
 app.post(`${apiBase}/schedules`, async (req, res) => {
   const { id, category, intervalKm, intervalMonths, lastOdo, lastDate } = req.body;
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('schedules').insert([{ id, category, intervalKm, intervalMonths, lastOdo, lastDate }]);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("INSERT INTO schedules (id, category, intervalKm, intervalMonths, lastOdo, lastDate) VALUES (?, ?, ?, ?, ?, ?)",
       [id, category, intervalKm, intervalMonths, lastOdo, lastDate]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 app.put(`${apiBase}/schedules/:id`, async (req, res) => {
   const { category, intervalKm, intervalMonths, lastOdo, lastDate } = req.body;
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('schedules').update({ category, intervalKm, intervalMonths, lastOdo, lastDate }).eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("UPDATE schedules SET category = ?, intervalKm = ?, intervalMonths = ?, lastOdo = ?, lastDate = ? WHERE id = ?",
       [category, intervalKm, intervalMonths, lastOdo, lastDate, req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 app.delete(`${apiBase}/schedules/:id`, async (req, res) => {
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('schedules').delete().eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("DELETE FROM schedules WHERE id = ?", [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
@@ -329,31 +411,52 @@ app.delete(`${apiBase}/schedules/:id`, async (req, res) => {
 app.post(`${apiBase}/rides`, async (req, res) => {
   const { id, date, route, distance, duration, fuelLiters, fuelCost, notes } = req.body;
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('rides').insert([{ id, date, route, distance, duration, fuelLiters, fuelCost, notes }]);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("INSERT INTO rides (id, date, route, distance, duration, fuelLiters, fuelCost, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [id, date, route, distance, duration, fuelLiters, fuelCost, notes]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 app.put(`${apiBase}/rides/:id`, async (req, res) => {
   const { date, route, distance, duration, fuelLiters, fuelCost, notes } = req.body;
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('rides').update({ date, route, distance, duration, fuelLiters, fuelCost, notes }).eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("UPDATE rides SET date = ?, route = ?, distance = ?, duration = ?, fuelLiters = ?, fuelCost = ?, notes = ? WHERE id = ?",
       [date, route, distance, duration, fuelLiters, fuelCost, notes, req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 app.delete(`${apiBase}/rides/:id`, async (req, res) => {
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('rides').delete().eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("DELETE FROM rides WHERE id = ?", [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
@@ -361,37 +464,77 @@ app.delete(`${apiBase}/rides/:id`, async (req, res) => {
 app.post(`${apiBase}/upgrades`, async (req, res) => {
   const { id, date, partName, category, cost, odometer, status, notes } = req.body;
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('upgrades').insert([{ id, date, partName, category, cost, odometer, status, notes }]);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("INSERT INTO upgrades (id, date, partName, category, cost, odometer, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [id, date, partName, category, cost, odometer, status, notes]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 app.put(`${apiBase}/upgrades/:id`, async (req, res) => {
   const { date, partName, category, cost, odometer, status, notes } = req.body;
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('upgrades').update({ date, partName, category, cost, odometer, status, notes }).eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("UPDATE upgrades SET date = ?, partName = ?, category = ?, cost = ?, odometer = ?, status = ?, notes = ? WHERE id = ?",
       [date, partName, category, cost, odometer, status, notes, req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 app.delete(`${apiBase}/upgrades/:id`, async (req, res) => {
   try {
+    if (useSupabase) {
+      const { error } = await supabase.from('upgrades').delete().eq('id', req.params.id);
+      if (error) throw error;
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("DELETE FROM upgrades WHERE id = ?", [req.params.id]);
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
 // RESET ENTIRE DATABASE
 app.post(`${apiBase}/reset`, async (req, res) => {
   try {
+    if (useSupabase) {
+      // Delete all rows in Supabase tables (hacky but effective for a reset endpoint)
+      await supabase.from('maintenance').delete().neq('id', '');
+      await supabase.from('schedules').delete().neq('id', '');
+      await supabase.from('rides').delete().neq('id', '');
+      await supabase.from('upgrades').delete().neq('id', '');
+      await supabase.from('bike').delete().neq('id', '');
+
+      // Seed bike and sample data
+      await supabase.from('bike').insert([SEED_BIKE]);
+      await supabase.from('maintenance').insert(SEED_MAINTENANCE);
+      await supabase.from('schedules').insert(SEED_SCHEDULES);
+      await supabase.from('rides').insert(SEED_RIDES);
+      await supabase.from('upgrades').insert(SEED_UPGRADES);
+
+      res.json({ success: true });
+      return;
+    }
+
     await dbRun("DROP TABLE IF EXISTS bike");
     await dbRun("DROP TABLE IF EXISTS maintenance");
     await dbRun("DROP TABLE IF EXISTS schedules");
@@ -401,7 +544,7 @@ app.post(`${apiBase}/reset`, async (req, res) => {
     await initDatabaseTables();
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message || err });
   }
 });
 
