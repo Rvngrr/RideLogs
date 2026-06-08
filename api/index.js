@@ -23,17 +23,24 @@ app.use((req, res, next) => {
   next();
 });
 
-// Resolve static routes to serve dashboard files directly on this port
-app.use(express.static(projectRoot));
-
 // On Vercel, api/index.js is a catch-all function and the original path is forwarded
 // via the `path` query parameter. Normalize it to a clean internal route.
 const apiBase = process.env.VERCEL ? '' : '/api';
 app.use((req, res, next) => {
   if (process.env.VERCEL && req.query?.path) {
-    req.url = `/${req.query.path}` + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
+    const rewritten = `/${req.query.path}` + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
+    console.log(`[API] Rewriting Vercel path ${req.url} -> ${rewritten}`);
+    req.url = rewritten;
   }
   next();
+});
+
+// Resolve static routes to serve dashboard files directly on this port, but skip API requests
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  express.static(projectRoot)(req, res, next);
 });
 
 // ==========================================
