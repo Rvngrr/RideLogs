@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MotoLog // Ultimate Ride & Maintenance Dashboard</title>
+  <!-- Google Fonts: Plus Jakarta Sans for UI, JetBrains Mono for numbers/logs -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="src/css/main.css">
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- SIDEBAR NAV -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <svg class="brand-icon" viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2.5"
+            fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10z"></path>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            <path d="M2 12h20"></path>
+          </svg>
+          <span class="brand-text">Moto<span class="highlight">Log</span></span>
+        </div>
+
+        <!-- Bike Profile Quick Widget -->
+        <div class="bike-card" id="bikeCard">
+          <div class="bike-avatar">
+            <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="1.5" fill="none">
+              <circle cx="5.5" cy="17.5" r="2.5" />
+              <circle cx="18.5" cy="17.5" r="2.5" />
+              <path d="M15 17.5c0-4 3.5-7 3.5-7h-3l-2.5-4h-3L8 10H5.5C4 10 3 11 3 12.5v3" />
+              <path d="M12 10v7.5M9.5 17.5h6" />
+            </svg>
+          </div>
+          <div class="bike-info">
+            <h4 class="bike-name" id="profileBikeName">Honda CB650R</h4>
+            <p class="bike-meta" id="profileBikeMeta">2023 // 8,450 km</p>
+          </div>
+          <button class="edit-profile-btn" id="editProfileBtn" title="Edit Bike Details">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+              <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- NAV ITEMS -->
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="overview">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+            <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+            <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+          </svg>
+          Overview
+        </button>
+        <button class="nav-item" data-tab="maintenance">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <path
+              d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+            </path>
+          </svg>
+          Maintenance Logs
+        </button>
+        <button class="nav-item" data-tab="pms">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          PMS Schedules
+        </button>
+        <button class="nav-item" data-tab="rides">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Ride Records
+        </button>
+        <button class="nav-item" data-tab="upgrades">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+            </polygon>
+          </svg>
+          Upgrades List
+        </button>
+        <button class="nav-item" data-tab="history">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L21 8"></path>
+            <polyline points="16 3 21 8 16 13"></polyline>
+          </svg>
+          History Timeline
+        </button>
+      </nav>
+
+      <!-- SIDEBAR FOOTER -->
+      <div class="sidebar-footer">
+        <p class="copyright">MotoLog v1.0.0</p>
+        <p class="storage-info" id="storageUsage">Storage: 0% used</p>
+      </div>
+    </aside>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="main-content">
+      <!-- TOP STATUS BAR -->
+      <header class="main-header">
+        <div class="header-title">
+          <h1 id="currentTabTitle">Dashboard Overview</h1>
+          <p class="subtitle" id="currentTabSubtitle">Keep track of your machine's heartbeat.</p>
+        </div>
+        <div class="header-actions">
+          <div class="odo-pill">
+            <span class="label">ODOMETER:</span>
+            <span class="value" id="headerOdometer">8,450 km</span>
+          </div>
+          <button class="btn btn-primary" id="quickAddBtn">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Quick Record
+          </button>
+        </div>
+      </header>
+
+      <!-- TAB CONTAINER -->
+      <div class="tab-content-container">
+
+        <!-- 1. OVERVIEW TAB -->
+        <section class="tab-panel active" id="tab-overview">
+          <!-- Stats Summary Cards Grid -->
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon cyan">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+              </div>
+              <div class="stat-details">
+                <p class="stat-label">Total Rides Distance</p>
+                <h3 class="stat-value" id="statTotalDistance">-- km</h3>
+                <p class="stat-desc" id="statRidesCount">-- total rides logged</p>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+              </div>
+              <div class="stat-details">
+                <p class="stat-label">Total Spent</p>
+                <h3 class="stat-value" id="statTotalSpent">₱--</h3>
+                <p class="stat-desc" id="statSpentSplit">Maint: ₱-- | Upgr: ₱--</p>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon orange">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+                  </path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <div class="stat-details">
+                <p class="stat-label">Next Service Due</p>
+                <h3 class="stat-value" id="statNextService">--</h3>
+                <p class="stat-desc" id="statNextServiceRemaining">--</p>
+              </div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-icon green">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M23 12a11.05 11.05 0 0 0-22 0v1a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3v-6a3 3 0 0 0-3-3H2"></path>
+                  <path d="M22 12a3 3 0 0 0-3-3h-2a3 3 0 0 0-3 3v6a3 3 0 0 0 3 3h2a3 3 0 0 0 3-3v-1"></path>
+                </svg>
+              </div>
+              <div class="stat-details">
+                <p class="stat-label">Avg. Fuel Efficiency</p>
+                <h3 class="stat-value" id="statAvgFuel">-- km/L</h3>
+                <p class="stat-desc" id="statAvgFuelDesc">Based on fuel stops</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row -->
+          <div class="charts-row">
+            <div class="chart-container-box">
+              <div class="chart-header">
+                <h3>Distance Ridden (Last 6 Months)</h3>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="mileageChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-container-box">
+              <div class="chart-header">
+                <h3>Expense Distribution</h3>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="expensesChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dashboard Bottom Section (Split Recent Activity & Quick Odo) -->
+          <div class="dashboard-split">
+            <div class="panel recent-activity-panel">
+              <div class="panel-header">
+                <h3>Recent History Logs</h3>
+                <button class="btn btn-sm btn-outline view-history-shortcut">View Full History</button>
+              </div>
+              <div class="timeline compact" id="dashboardRecentActivity">
+                <!-- Dynamically generated list -->
+              </div>
+            </div>
+
+            <div class="panel quick-controls-panel">
+              <div class="panel-header">
+                <h3>Quick Controls</h3>
+              </div>
+
+              <!-- Quick Update Odometer -->
+              <form id="quickOdoForm" class="quick-form">
+                <label for="quickOdometerInput" class="form-label">Update Current Odometer (km)</label>
+                <div class="input-group">
+                  <input type="number" id="quickOdometerInput" class="form-control" placeholder="e.g. 8450" required
+                    min="1">
+                  <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+              </form>
+
+              <!-- Fuel Cost / Mileage Calculator Widget -->
+              <div class="quick-calc-widget">
+                <h4>Fuel Cost Estimator</h4>
+                <div class="calc-grid">
+                  <div>
+                    <label class="small-label">Distance (km)</label>
+                    <input type="number" id="calcDistance" class="form-control form-control-sm" value="100">
+                  </div>
+                  <div>
+                    <label class="small-label">Fuel Price (₱/L)</label>
+                    <input type="number" id="calcFuelPrice" class="form-control form-control-sm" value="1.65"
+                      step="0.01">
+                  </div>
+                </div>
+                <div class="calc-result">
+                  <p>Estimated Cost: <strong id="calcResultValue">₱4.13</strong></p>
+                  <span class="small-desc">(Using your avg. fuel efficiency)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. MAINTENANCE LOGS TAB -->
+        <section class="tab-panel" id="tab-maintenance">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="maintSearch" class="form-control" placeholder="Search logs...">
+            </div>
+
+            <div class="filter-actions">
+              <select id="maintCategoryFilter" class="form-control filter-select">
+                <option value="All">All Categories</option>
+                <option value="Engine Oil">Engine Oil</option>
+                <option value="Oil Filter">Oil Filter</option>
+                <option value="Spark Plugs">Spark Plugs</option>
+                <option value="Drive Belt">Drive Belt</option>
+                <option value="Center Spring">Center Spring</option>
+                <option value="Clutch Spring">Clutch Spring</option>
+                <option value="Steering Bearing">Steering Bearing</option>
+                <option value="Wheel Bearing">Wheel Bearing</option>
+                <option value="Flyball">Flyball</option>
+                <option value="Brake Pads">Brake Pads</option>
+                <option value="Brake Fluid">Brake Fluid</option>
+                <option value="Air Filter">Air Filter</option>
+                <option value="Coolant">Coolant</option>
+                <option value="Tires">Tires</option>
+                <option value="Battery">Battery</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <button class="btn btn-primary" id="addMaintLogBtn">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Log
+              </button>
+            </div>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-responsive">
+              <table class="data-table" id="maintTable">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Odometer</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Cost</th>
+                    <th>Type</th>
+                    <th style="width: 120px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="maintLogList">
+                  <!-- Generated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. PMS SCHEDULES TAB -->
+        <section class="tab-panel" id="tab-pms">
+          <div class="table-toolbar">
+            <div class="toolbar-text">
+              <p>Set up scheduled reminders for periodic maintenance items based on odometer thresholds and duration
+                parameters.</p>
+            </div>
+            <button class="btn btn-primary" id="addPmsBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Add Schedule
+            </button>
+          </div>
+
+          <div class="pms-grid" id="pmsList">
+            <!-- Dynamically generated service interval cards -->
+          </div>
+        </section>
+
+        <!-- 4. RIDE RECORDS TAB -->
+        <section class="tab-panel" id="tab-rides">
+          <!-- Ride statistics overview row -->
+          <div class="rides-stats-bar">
+            <div class="ride-stat-item">
+              <span class="label">Total Rides Distance</span>
+              <span class="value" id="ridesTotalDist">-- km</span>
+            </div>
+            <div class="ride-stat-item">
+              <span class="label">Average Distance / Ride</span>
+              <span class="value" id="ridesAvgDist">-- km</span>
+            </div>
+            <div class="ride-stat-item">
+              <span class="label">Best Fuel Economy</span>
+              <span class="value" id="ridesBestFuel">-- km/L</span>
+            </div>
+            <div class="ride-stat-item">
+              <span class="label">Total Fuel Cost</span>
+              <span class="value" id="ridesTotalFuelSpent">₱--</span>
+            </div>
+          </div>
+
+          <div class="table-toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="rideSearch" class="form-control" placeholder="Search routes or notes...">
+            </div>
+            <button class="btn btn-primary" id="addRideBtn">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+              Log Ride
+            </button>
+          </div>
+
+          <div class="panel table-panel">
+            <div class="table-responsive">
+              <table class="data-table" id="ridesTable">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Route / Name</th>
+                    <th>Distance</th>
+                    <th>Duration</th>
+                    <th>Fuel Used</th>
+                    <th>Fuel Economy</th>
+                    <th>Fuel Cost</th>
+                    <th style="width: 120px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ridesList">
+                  <!-- Generated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. UPGRADES LIST TAB -->
+        <section class="tab-panel" id="tab-upgrades">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="upgradeSearch" class="form-control" placeholder="Search upgrades...">
+            </div>
+            <div class="filter-actions">
+              <select id="upgradeCategoryFilter" class="form-control filter-select">
+                <option value="All">All Categories</option>
+                <option value="Engine Oil">Engine Oil</option>
+                <option value="Oil Filter">Oil Filter</option>
+                <option value="Spark Plugs">Spark Plugs</option>
+                <option value="Drive Belt">Drive Belt</option>
+                <option value="Center Spring">Center Spring</option>
+                <option value="Clutch Spring">Clutch Spring</option>
+                <option value="Steering Bearing">Steering Bearing</option>
+                <option value="Wheel Bearing">Wheel Bearing</option>
+                <option value="Flyball">Flyball</option>
+                <option value="Brake Pads">Brake Pads</option>
+                <option value="Brake Fluid">Brake Fluid</option>
+                <option value="Air Filter">Air Filter</option>
+                <option value="Coolant">Coolant</option>
+                <option value="Tires">Tires</option>
+                <option value="Battery">Battery</option>
+                <option value="Other">Other</option>
+              </select>
+              <button class="btn btn-primary" id="addUpgradeBtn">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Upgrade
+              </button>
+            </div>
+          </div>
+
+          <div class="upgrades-summary-bar">
+            <div class="summary-pill purple">
+              Total Upgrade Expenditure: <strong id="upgradesTotalSpent">₱0.00</strong>
+            </div>
+            <div class="summary-pill cyan">
+              Installed Upgrades: <strong id="upgradesInstalledCount">0</strong>
+            </div>
+            <div class="summary-pill orange">
+              Wishlist / Planned Upgrades: <strong id="upgradesWishlistCount">0</strong>
+            </div>
+          </div>
+
+          <div class="upgrades-grid" id="upgradesList">
+            <!-- Dynamically generated upgrades -->
+          </div>
+        </section>
+
+        <!-- 6. HISTORY TIMELINE TAB -->
+        <section class="tab-panel" id="tab-history">
+          <div class="timeline-controls">
+            <span class="label">Filter Timeline:</span>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline active" data-timeline-filter="all">All Events</button>
+              <button class="btn btn-sm btn-outline" data-timeline-filter="ride">Rides Only</button>
+              <button class="btn btn-sm btn-outline" data-timeline-filter="maintenance">Maintenance Only</button>
+              <button class="btn btn-sm btn-outline" data-timeline-filter="upgrade">Upgrades Only</button>
+            </div>
+          </div>
+
+          <div class="panel timeline-panel">
+            <div class="timeline" id="historyTimeline">
+              <!-- Dynamically populated timeline -->
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL DIALOGS -->
+
+  <!-- BIKE PROFILE MODAL -->
+  <div class="modal-backdrop" id="profileModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Edit Motorcycle Profile</h2>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="profileForm">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="bikeNameInput" class="form-label">Motorcycle Name / Model</label>
+            <input type="text" id="bikeNameInput" class="form-control" required placeholder="e.g. Honda CB650R">
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="bikeYearInput" class="form-label">Model Year</label>
+              <input type="number" id="bikeYearInput" class="form-control" required placeholder="e.g. 2023" min="1900"
+                max="2030">
+            </div>
+            <div class="form-group">
+              <label for="bikeOdoInput" class="form-label">Current Odometer (km)</label>
+              <input type="number" id="bikeOdoInput" class="form-control" required placeholder="e.g. 8450" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="bikeAvatarInput" class="form-label">Bike Avatar Theme Color</label>
+            <select id="bikeAvatarInput" class="form-control">
+              <option value="cyan">Electric Cyan</option>
+              <option value="purple">Hyper Purple</option>
+              <option value="green">Neon Mint</option>
+              <option value="orange">Electric Amber</option>
+              <option value="pink">Racing Pink</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- QUICK RECORD SELECTOR MODAL -->
+  <div class="modal-backdrop" id="quickRecordModal">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h2>Quick Record</h2>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <div class="modal-body quick-options">
+        <button class="quick-option-btn text-cyan" id="quickOptionRide">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Log a Ride</span>
+        </button>
+        <button class="quick-option-btn text-orange" id="quickOptionMaint">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+            <path
+              d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+            </path>
+          </svg>
+          <span>Log Maintenance</span>
+        </button>
+        <button class="quick-option-btn text-purple" id="quickOptionUpgrade">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+            <polygon
+              points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+            </polygon>
+          </svg>
+          <span>Log an Upgrade</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAINTENANCE LOG MODAL -->
+  <div class="modal-backdrop" id="maintModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="maintModalTitle">Log Maintenance Task</h2>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="maintForm">
+        <input type="hidden" id="maintIdInput">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="maintDateInput" class="form-label">Date Performed</label>
+              <input type="date" id="maintDateInput" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="maintOdoInput" class="form-label">Odometer Reading (km)</label>
+              <input type="number" id="maintOdoInput" class="form-control" required min="0">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="maintCategorySelect" class="form-label">Category</label>
+              <select id="maintCategorySelect" class="form-control" required>
+                <option value="All">All Categories</option>
+                <option value="Engine Oil">Engine Oil</option>
+                <option value="Oil Filter">Oil Filter</option>
+                <option value="Spark Plugs">Spark Plugs</option>
+                <option value="Drive Belt">Drive Belt</option>
+                <option value="Center Spring">Center Spring</option>
+                <option value="Clutch Spring">Clutch Spring</option>
+                <option value="Steering Bearing">Steering Bearing</option>
+                <option value="Wheel Bearing">Wheel Bearing</option>
+                <option value="Flyball">Flyball</option>
+                <option value="Brake Pads">Brake Pads</option>
+                <option value="Brake Fluid">Brake Fluid</option>
+                <option value="Air Filter">Air Filter</option>
+                <option value="Coolant">Coolant</option>
+                <option value="Tires">Tires</option>
+                <option value="Battery">Battery</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="maintCostInput" class="form-label">Cost (₱)</label>
+              <input type="number" id="maintCostInput" class="form-control" required min="0" step="0.01">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Service Type</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="maintDiy" value="true" checked>
+                <span>DIY (Do It Yourself)</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="maintDiy" value="false">
+                <span>Professional Shop</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="maintDescInput" class="form-label">Task Details / Description</label>
+            <input type="text" id="maintDescInput" class="form-control" required
+              placeholder="e.g. Changed spark plugs to NGK Laser Iridium">
+          </div>
+          <div class="form-group">
+            <label for="maintNotesInput" class="form-label">Notes</label>
+            <textarea id="maintNotesInput" class="form-control"
+              placeholder="E.g. brand, specs, torque values, or observations..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="maintSubmitBtn">Save Log</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- PMS SCHEDULE MODAL -->
+  <div class="modal-backdrop" id="pmsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="pmsModalTitle">Add PMS Schedule Reminders</h2>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="pmsForm">
+        <input type="hidden" id="pmsIdInput">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="pmsCategorySelect" class="form-label">Category</label>
+            <select id="pmsCategorySelect" class="form-control" required>
+              <option value="All">All Categories</option>
+              <option value="Engine Oil">Engine Oil</option>
+              <option value="Oil Filter">Oil Filter</option>
+              <option value="Spark Plugs">Spark Plugs</option>
+              <option value="Drive Belt">Drive Belt</option>
+              <option value="Center Spring">Center Spring</option>
+              <option value="Clutch Spring">Clutch Spring</option>
+              <option value="Steering Bearing">Steering Bearing</option>
+              <option value="Wheel Bearing">Wheel Bearing</option>
+              <option value="Flyball">Flyball</option>
+              <option value="Brake Pads">Brake Pads</option>
+              <option value="Brake Fluid">Brake Fluid</option>
+              <option value="Air Filter">Air Filter</option>
+              <option value="Coolant">Coolant</option>
+              <option value="Tires">Tires</option>
+              <option value="Battery">Battery</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="pmsIntervalKmInput" class="form-label">Interval (km)</label>
+              <input type="number" id="pmsIntervalKmInput" class="form-control" placeholder="e.g. 3000 (0 to disable)"
+                min="0">
+            </div>
+            <div class="form-group">
+              <label for="pmsIntervalMonthsInput" class="form-label">Interval (months)</label>
+              <input type="number" id="pmsIntervalMonthsInput" class="form-control" placeholder="e.g. 6 (0 to disable)"
+                min="0">
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="pmsLastOdoInput" class="form-label">Last Done Odometer (km)</label>
+              <input type="number" id="pmsLastOdoInput" class="form-control" placeholder="e.g. 8000" min="0" required>
+            </div>
+            <div class="form-group">
+              <label for="pmsLastDateInput" class="form-label">Last Done Date</label>
+              <input type="date" id="pmsLastDateInput" class="form-control" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="pmsSubmitBtn">Save Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RIDE LOG MODAL -->
+  <div class="modal-backdrop" id="rideModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="rideModalTitle">Log a Ride</h2>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="rideForm">
+        <input type="hidden" id="rideIdInput">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="rideDateInput" class="form-label">Ride Date</label>
+              <input type="date" id="rideDateInput" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="rideRouteInput" class="form-label">Route / Name</label>
+              <input type="text" id="rideRouteInput" class="form-control" placeholder="e.g. Highway loop, Sierra Loop"
+                required>
+            </div>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="rideDistanceInput" class="form-label">Distance Ridden (km)</label>
+              <input type="number" id="rideDistanceInput" class="form-control" required min="1" step="0.1">
+            </div>
+            <div class="form-group">
+              <label for="rideDurationInput" class="form-label">Duration (e.g. 2h 45m)</label>
+              <input type="text" id="rideDurationInput" class="form-control" placeholder="e.g. 3h 30m">
+            </div>
+          </div>
+          <div class="form-section-title">Fuel Stops details (Optional, helps calculate fuel economy)</div>
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="rideFuelInput" class="form-label">Fuel Added (Liters)</label>
+              <input type="number" id="rideFuelInput" class="form-control" placeholder="e.g. 8.5" min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="rideFuelCostInput" class="form-label">Fuel Cost (₱)</label>
+              <input type="number" id="rideFuelCostInput" class="form-control" placeholder="e.g. 14.50" min="0"
+                step="0.01">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Trigger Odometer update?</label>
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="rideUpdateOdoCheckbox" checked>
+                <span class="checkbox-label">Add distance to current bike odo</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="rideNotesInput" class="form-label">Ride Notes</label>
+            <textarea id="rideNotesInput" class="form-control"
+              placeholder="E.g. weather conditions, road closures, tire performance..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="rideSubmitBtn">Log Ride</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- UPGRADE MODAL -->
+  <div class="modal-backdrop" id="upgradeModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="upgradeModalTitle">Log a Part Upgrade</h2>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <form id="upgradeForm">
+        <input type="hidden" id="upgradeIdInput">
+        <div class="modal-body">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label for="upgradeDateInput" class="form-label">Date Installed</label>
+              <input type="date" id="upgradeDateInput" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="upgradeNameInput" class="form-label">Upgrade / Part Name</label>
+              <input type="text" id="upgradeNameInput" class="form-control"
+                placeholder="e.g. Öhlins Rear Shock Absorber" required>
+            </div>
+          </div>
+          <div class="form-grid-3">
+            <div class="form-group">
+              <label for="upgradeCategorySelect" class="form-label">Category</label>
+              <select id="upgradeCategorySelect" class="form-control" required>
+                <option value="Performance">Performance</option>
+                <option value="Aesthetics">Aesthetics</option>
+                <option value="Comfort">Comfort</option>
+                <option value="Luggage">Luggage</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Protection">Protection</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="upgradeCostInput" class="form-label">Cost (₱)</label>
+              <input type="number" id="upgradeCostInput" class="form-control" required min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="upgradeOdoInput" class="form-label">Installation Odometer</label>
+              <input type="number" id="upgradeOdoInput" class="form-control" required min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Installation Status</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="upgradeStatus" value="Installed" checked>
+                <span>Installed</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="upgradeStatus" value="Planned">
+                <span>Planned (Wishlist)</span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="upgradeNotesInput" class="form-label">Notes & Specifications</label>
+            <textarea id="upgradeNotesInput" class="form-control"
+              placeholder="E.g. Model details, seller, installation details..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="upgradeSubmitBtn">Save Upgrade</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONFIRM DELETE MODAL -->
+  <div class="modal-backdrop" id="confirmDeleteModal">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h2>Confirm Action</h2>
+        <button class="close-modal-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin: 0; line-height: 1.5;">Are you sure you want to perform this action? This cannot be undone.</p>
+      </div>
+      <div class="modal-footer" style="gap: 8px;">
+        <button type="button" class="btn btn-outline close-modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/js/main.js"></script>
+</body>
+
+</html>

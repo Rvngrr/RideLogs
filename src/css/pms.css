@@ -1,0 +1,138 @@
+/* src/css/pms.css */
+
+.pms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.pms-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: var(--transition-normal);
+}
+
+.pms-card:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-md);
+}
+
+/* Status Indicator ring/lights */
+.pms-status-indicator {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pms-status-indicator.healthy .status-dot { background-color: var(--color-green); box-shadow: 0 0 8px var(--color-green-glow); }
+.pms-status-indicator.due .status-dot { background-color: var(--color-orange); box-shadow: 0 0 8px var(--color-orange-glow); }
+.pms-status-indicator.overdue .status-dot { background-color: var(--color-danger); box-shadow: 0 0 8px var(--color-danger-glow); animation: blink 1.2s infinite; }
+
+.status-label-text {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.pms-status-indicator.healthy .status-label-text { color: var(--color-green); }
+.pms-status-indicator.due .status-label-text { color: var(--color-orange); }
+.pms-status-indicator.overdue .status-label-text { color: var(--color-danger); }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.pms-card-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.pms-card-header .interval {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Progress bar inside card */
+.pms-progress-block {
+  margin: 12px 0 6px 0;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.progress-bar-bg {
+  background: rgba(255, 255, 255, 0.05);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pms-card.healthy .progress-bar-fill { background: var(--color-green); }
+.pms-card.due .progress-bar-fill { background: var(--color-orange); }
+.pms-card.overdue .progress-bar-fill { background: var(--color-danger); }
+
+.pms-card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 0;
+}
+
+.pms-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.pms-stat .label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.pms-stat .val {
+  font-size: 14px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.pms-card-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pms-card-actions .actions-cell {
+  gap: 4px;
+}

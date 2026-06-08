@@ -1,0 +1,47 @@
+/* src/css/variables.css */
+
+:root {
+  /* Colors */
+  --bg-main: #07090e;
+  --bg-sidebar: #0f111a;
+  --bg-panel: #131722;
+  --bg-card: rgba(22, 27, 41, 0.7);
+  --bg-card-hover: rgba(30, 36, 54, 0.85);
+  
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(0, 210, 255, 0.4);
+  
+  --text-primary: #f1f3f9;
+  --text-secondary: #8e9aae;
+  --text-muted: #5e6b7e;
+  
+  /* Accent Neon Colors */
+  --color-cyan: #00d2ff;
+  --color-cyan-glow: rgba(0, 210, 255, 0.2);
+  --color-purple: #a15ffb;
+  --color-purple-glow: rgba(161, 95, 251, 0.2);
+  --color-green: #00ff87;
+  --color-green-glow: rgba(0, 255, 135, 0.2);
+  --color-orange: #ff9f00;
+  --color-orange-glow: rgba(255, 159, 0, 0.2);
+  --color-danger: #ff416c;
+  --color-danger-glow: rgba(255, 65, 108, 0.2);
+  
+  /* Typography */
+  --font-ui: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Shadow & Blur */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.7);
+  --glass-blur: blur(12px);
+  
+  /* Layout */
+  --sidebar-width: 280px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
