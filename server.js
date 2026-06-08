@@ -27,13 +27,35 @@ app.use(express.static(__dirname));
 // SQLITE DATABASE INITS
 // ==========================================
 
-const dbPath = path.join(__dirname, 'database.db');
+import fs from 'fs';
+
+// Resolve database path - on Vercel we must copy the database to /tmp so it is writable
+const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
+const dbDir = isVercel ? '/tmp' : __dirname;
+const dbPath = path.join(dbDir, 'database.db');
+
+if (isVercel) {
+  const sourceDbPath = path.join(__dirname, 'database.db');
+  try {
+    if (fs.existsSync(sourceDbPath)) {
+      if (!fs.existsSync(dbPath)) {
+        fs.copyFileSync(sourceDbPath, dbPath);
+        console.log('Database seeded and copied to /tmp successfully.');
+      } else {
+        console.log('Database already exists in /tmp.');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to copy database to /tmp:', err.message);
+  }
+}
+
 const sqlite = sqlite3.verbose();
 const db = new sqlite.Database(dbPath, (err) => {
   if (err) {
     console.error('Failed to open SQLite database:', err.message);
   } else {
-    console.log('Connected to local SQL database at database.db');
+    console.log(`Connected to SQL database at ${dbPath}`);
     initDatabaseTables();
   }
 });
@@ -372,6 +394,10 @@ app.post('/api/reset', async (req, res) => {
 });
 
 // START EXPRESS RUNNER
-app.listen(PORT, () => {
-  console.log(`MotoLog Server running successfully at http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`MotoLog Server running successfully at http://localhost:${PORT}`);
+  });
+}
+
+export default app;
