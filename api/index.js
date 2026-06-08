@@ -25,23 +25,36 @@ app.use((req, res, next) => {
 
 // On Vercel, api/index.js is a catch-all function and the original path is forwarded
 // via the `path` query parameter. Normalize it to a clean internal route.
-const apiBase = process.env.VERCEL ? '' : '/api';
+const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
+const apiBase = isVercel ? '' : '/api';
 app.use((req, res, next) => {
-  if (process.env.VERCEL && req.query?.path) {
-    const rewritten = `/${req.query.path}` + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
-    console.log(`[API] Rewriting Vercel path ${req.url} -> ${rewritten}`);
-    req.url = rewritten;
+  if (isVercel) {
+    if (req.query?.path) {
+      let rewrittenPath = req.query.path;
+      if (rewrittenPath.startsWith('api/')) {
+        rewrittenPath = rewrittenPath.slice(4);
+      }
+      const rewritten = `/${rewrittenPath}` + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
+      console.log(`[API] Rewriting Vercel path ${req.originalUrl} -> ${rewritten}`);
+      req.url = rewritten;
+    } else if (req.url.startsWith('/api/')) {
+      const rewritten = req.url.slice(4);
+      console.log(`[API] Stripping /api prefix on Vercel: ${req.originalUrl} -> ${rewritten}`);
+      req.url = rewritten;
+    }
   }
   next();
 });
 
-// Resolve static routes to serve dashboard files directly on this port, but skip API requests
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    return next();
-  }
-  express.static(projectRoot)(req, res, next);
-});
+// Resolve static routes to serve dashboard files directly on this port in local development only
+if (!isVercel) {
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    express.static(projectRoot)(req, res, next);
+  });
+}
 
 // ==========================================
 
@@ -60,7 +73,6 @@ if (useSupabase) {
 import fs from 'fs';
 
 // Resolve database path - on Vercel we must copy the database to /tmp so it is writable
-const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
 const dbDir = isVercel ? '/tmp' : projectRoot;
 const dbPath = path.join(dbDir, 'database.db');
 
@@ -284,11 +296,28 @@ app.get(`${apiBase}/db`, async (req, res) => {
 
     res.json({ bike, maintenance, schedules, rides, upgrades });
   } catch (err) {
+    console.error('[API] GET /db failed', err);
     res.status(500).json({ error: 'Failed to fetch database state: ' + (err.message || err) });
   }
 });
 
-// UPDATE BIKE DETAILS
+// BIKE PROFILE ENDPOINTS
+app.get(`${apiBase}/bike`, async (req, res) => {
+  try {
+    if (useSupabase) {
+      const { data: bikeRows, error } = await supabase.from('bike').select('*').limit(1);
+      if (error) throw error;
+      return res.json({ bike: (bikeRows?.[0] || null) });
+    }
+
+    const bike = await dbGet("SELECT * FROM bike LIMIT 1");
+    return res.json({ bike });
+  } catch (err) {
+    console.error('[API] GET /bike failed', err);
+    res.status(500).json({ error: 'Failed to fetch bike profile: ' + (err.message || err) });
+  }
+});
+
 app.put(`${apiBase}/bike`, async (req, res) => {
   const { name, year, odometer, avatarColor } = req.body;
   try {
@@ -304,6 +333,7 @@ app.put(`${apiBase}/bike`, async (req, res) => {
       [name, year, odometer, avatarColor]);
     res.json({ success: true });
   } catch (err) {
+    console.error('[API] PUT /bike failed', err);
     res.status(500).json({ error: err.message || err });
   }
 });
