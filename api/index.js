@@ -25,6 +25,16 @@ app.use((req, res, next) => {
 // Resolve static routes to serve dashboard files directly on this port
 app.use(express.static(projectRoot));
 
+// On Vercel, api/index.js is a catch-all function and the original path is forwarded
+// via the `path` query parameter. Normalize it to a clean internal route.
+const apiBase = process.env.VERCEL ? '' : '/api';
+app.use((req, res, next) => {
+  if (process.env.VERCEL && req.query?.path) {
+    req.url = `/${req.query.path}` + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
+  }
+  next();
+});
+
 // ==========================================
 // SQLITE DATABASE INITS
 // ==========================================
@@ -222,7 +232,7 @@ async function initDatabaseTables() {
 // ==========================================
 
 // GET FULL STATE
-app.get('/api/db', async (req, res) => {
+app.get(`${apiBase}/db`, async (req, res) => {
   try {
     const bike = await dbGet("SELECT * FROM bike LIMIT 1");
     const maintenanceRaw = await dbAll("SELECT * FROM maintenance");
@@ -240,7 +250,7 @@ app.get('/api/db', async (req, res) => {
 });
 
 // UPDATE BIKE DETAILS
-app.put('/api/bike', async (req, res) => {
+app.put(`${apiBase}/bike`, async (req, res) => {
   const { name, year, odometer, avatarColor } = req.body;
   try {
     await dbRun("UPDATE bike SET name = ?, year = ?, odometer = ?, avatarColor = ? WHERE id = 1", 
@@ -252,7 +262,7 @@ app.put('/api/bike', async (req, res) => {
 });
 
 // --- MAINTENANCE ENDPOINTS ---
-app.post('/api/maintenance', async (req, res) => {
+app.post(`${apiBase}/maintenance`, async (req, res) => {
   const { id, date, odometer, category, cost, diy, description, notes } = req.body;
   try {
     await dbRun("INSERT INTO maintenance (id, date, odometer, category, cost, diy, description, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -263,7 +273,7 @@ app.post('/api/maintenance', async (req, res) => {
   }
 });
 
-app.put('/api/maintenance/:id', async (req, res) => {
+app.put(`${apiBase}/maintenance/:id`, async (req, res) => {
   const { date, odometer, category, cost, diy, description, notes } = req.body;
   try {
     await dbRun("UPDATE maintenance SET date = ?, odometer = ?, category = ?, cost = ?, diy = ?, description = ?, notes = ? WHERE id = ?",
@@ -274,7 +284,7 @@ app.put('/api/maintenance/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/maintenance/:id', async (req, res) => {
+app.delete(`${apiBase}/maintenance/:id`, async (req, res) => {
   try {
     await dbRun("DELETE FROM maintenance WHERE id = ?", [req.params.id]);
     res.json({ success: true });
@@ -284,7 +294,7 @@ app.delete('/api/maintenance/:id', async (req, res) => {
 });
 
 // --- SCHEDULES (PMS) ENDPOINTS ---
-app.post('/api/schedules', async (req, res) => {
+app.post(`${apiBase}/schedules`, async (req, res) => {
   const { id, category, intervalKm, intervalMonths, lastOdo, lastDate } = req.body;
   try {
     await dbRun("INSERT INTO schedules (id, category, intervalKm, intervalMonths, lastOdo, lastDate) VALUES (?, ?, ?, ?, ?, ?)",
@@ -295,7 +305,7 @@ app.post('/api/schedules', async (req, res) => {
   }
 });
 
-app.put('/api/schedules/:id', async (req, res) => {
+app.put(`${apiBase}/schedules/:id`, async (req, res) => {
   const { category, intervalKm, intervalMonths, lastOdo, lastDate } = req.body;
   try {
     await dbRun("UPDATE schedules SET category = ?, intervalKm = ?, intervalMonths = ?, lastOdo = ?, lastDate = ? WHERE id = ?",
@@ -306,7 +316,7 @@ app.put('/api/schedules/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/schedules/:id', async (req, res) => {
+app.delete(`${apiBase}/schedules/:id`, async (req, res) => {
   try {
     await dbRun("DELETE FROM schedules WHERE id = ?", [req.params.id]);
     res.json({ success: true });
@@ -316,7 +326,7 @@ app.delete('/api/schedules/:id', async (req, res) => {
 });
 
 // --- RIDES ENDPOINTS ---
-app.post('/api/rides', async (req, res) => {
+app.post(`${apiBase}/rides`, async (req, res) => {
   const { id, date, route, distance, duration, fuelLiters, fuelCost, notes } = req.body;
   try {
     await dbRun("INSERT INTO rides (id, date, route, distance, duration, fuelLiters, fuelCost, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -327,7 +337,7 @@ app.post('/api/rides', async (req, res) => {
   }
 });
 
-app.put('/api/rides/:id', async (req, res) => {
+app.put(`${apiBase}/rides/:id`, async (req, res) => {
   const { date, route, distance, duration, fuelLiters, fuelCost, notes } = req.body;
   try {
     await dbRun("UPDATE rides SET date = ?, route = ?, distance = ?, duration = ?, fuelLiters = ?, fuelCost = ?, notes = ? WHERE id = ?",
@@ -338,7 +348,7 @@ app.put('/api/rides/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/rides/:id', async (req, res) => {
+app.delete(`${apiBase}/rides/:id`, async (req, res) => {
   try {
     await dbRun("DELETE FROM rides WHERE id = ?", [req.params.id]);
     res.json({ success: true });
@@ -348,7 +358,7 @@ app.delete('/api/rides/:id', async (req, res) => {
 });
 
 // --- UPGRADES ENDPOINTS ---
-app.post('/api/upgrades', async (req, res) => {
+app.post(`${apiBase}/upgrades`, async (req, res) => {
   const { id, date, partName, category, cost, odometer, status, notes } = req.body;
   try {
     await dbRun("INSERT INTO upgrades (id, date, partName, category, cost, odometer, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -359,7 +369,7 @@ app.post('/api/upgrades', async (req, res) => {
   }
 });
 
-app.put('/api/upgrades/:id', async (req, res) => {
+app.put(`${apiBase}/upgrades/:id`, async (req, res) => {
   const { date, partName, category, cost, odometer, status, notes } = req.body;
   try {
     await dbRun("UPDATE upgrades SET date = ?, partName = ?, category = ?, cost = ?, odometer = ?, status = ?, notes = ? WHERE id = ?",
@@ -370,7 +380,7 @@ app.put('/api/upgrades/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/upgrades/:id', async (req, res) => {
+app.delete(`${apiBase}/upgrades/:id`, async (req, res) => {
   try {
     await dbRun("DELETE FROM upgrades WHERE id = ?", [req.params.id]);
     res.json({ success: true });
@@ -380,7 +390,7 @@ app.delete('/api/upgrades/:id', async (req, res) => {
 });
 
 // RESET ENTIRE DATABASE
-app.post('/api/reset', async (req, res) => {
+app.post(`${apiBase}/reset`, async (req, res) => {
   try {
     await dbRun("DROP TABLE IF EXISTS bike");
     await dbRun("DROP TABLE IF EXISTS maintenance");
