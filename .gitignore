@@ -1,0 +1,5 @@
+node_modules/
+database.db-journal
+.vercel/
+.DS_Store
+*.log
